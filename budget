@@ -26,7 +26,7 @@ read_file(){
 main(){
 	cur="kr"
 	read_file; echo; print_income; echo; print_expense
-	printf '\n\e[1m%s\n' "free capatal: $((income_total-expense_total)) $cur"
+	printf '\n\e[1m%s\n' "free capital: $((income_total-expense_total)) $cur"
 }
 
 main "$@" #| fzf --ansi --reverse --height=40%
