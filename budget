@@ -14,7 +14,7 @@ expense(){
 }
 
 print_all(){
-	for i in income expense; do print "$i"; done
+	for i in income expense; do echo; print "$i"; done
 	printf '\n\e[1m%s\n' "remaining: $((it-et)) $cur"
 }
 
@@ -24,9 +24,9 @@ print(){
 		income) sn=(${in[@]}); si=(${ii[@]}); st=$it ;;
 		expense) sn=(${en[@]}); si=(${ei[@]}); st=$et ;;
 	esac
-	printf '\e[4m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "$1:" "$((st))" " $cur"
+	printf '\e[4;34m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "$1:" "$((st))" " $cur"
 	for ((i=0;i<${#si[@]};i++)){
-		printf '\e[m%-12.12s\e[1m%12.9s\e[m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur"
+		printf '\e[0;34m%-12.12s\e[1;35m%12.9s\e[0m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur"
 	}
 }
 
@@ -65,7 +65,7 @@ write_file(){
 print_opts(){ printf '%s\n' "print" "income" "expense"; }
 
 printl(){
-	printf '\e[1m%s \e[0;36m%s\e[m\n' "BUDGET 0.0.1" "[j/k to move]"
+	printf '\e[1m%12.12s \e[0;36m%15.13s\e[m\n' "BUDGET 0.0.1" "[j/k to move]"
 	for i in ${!o[@]}; do
 		case $i in
 			$p) printf '\e[1;36m> %s\e[m\n' "${o[p]}" ;;
@@ -76,10 +76,15 @@ printl(){
 }
 
 case_key(){
-	case $1 in
-		k) ((p=p>0?p-1:0)) ;;
-		j) ((p=p<${#o[@]}-1?p+1:2)) ;;
-		''|l) eval ${o[p]} ;;
+    [[ $1 == $'\e' ]] && {
+        read -rsn 2
+        [[ ${1}${REPLY} == $'\e\e['* ]] && read -rsn 1 _
+        local e=${1}${REPLY}
+    }
+	case ${e:-$1} in
+		k|$'\e[A') ((p=p>0?p-1:0)) ;;
+		j|$'\e[B') ((p=p<${#o[@]}-1?p+1:${#o[@]}-1)) ;;
+		l|'') eval ${o[p]} ;;
 		$'\x1b'|q) exit 0 ;;
 	esac
 }
@@ -87,7 +92,7 @@ case_key(){
 main(){
 	budget="$HOME/Dokumenter/budget.tab"
 	[[ -f $budget ]] || budget="example.bgt"
-	p=0; o=("print" "add" "delete")
+	p=0; o=("add" "delete" "write")
 	printf '\e[s'
 	read_file
 	for((;;)){ st="0";reset; printl; read -rsn1 key; case_key "$key"; }
@@ -95,5 +100,6 @@ main(){
 
 
 trap "printf '\e[u\e[m\e[J\e[?25h'" EXIT
+trap 'exit' SIGINT
 cur="kr"
 main "$@"
