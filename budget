@@ -67,6 +67,7 @@ read_file(){
 print_opts(){ printf '%s\n' "print" "income" "expense"; }
 
 main(){
+	cur="kr"
 	budget="$HOME/Dokumenter/budget.tab"
 	[[ -f $budget ]] || budget="example.bgt"
 	read_file
