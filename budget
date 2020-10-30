@@ -20,18 +20,26 @@ add_expense(){
 	en+=("$1"); ei+=("$2"); ((expense_total+=$2))
 }
 
-delete_income(){
-	for i in "${!in}";{
-		[[ "${in[i]}" =~ $1 ]] || continue
-		read -rp $''"delete ${in[i]}"
+delete(){
+	for i in "${!sn}";{
+		[[ "${sn[i]}" =~ $1 ]] || continue
+		read -rp $''"delete ${sn[i]}"
 		[[ "$REPLY" =~ y|Y ]] || continue
-		unset in[i] ii[i]
+		unset !sn[i] !si[i]
 	}
 }
 
-print_expense(){
+case_state(){
+	case $1 in
+		income) sn=("${in[@]}"); si=("${ii[@]}") ;;
+		expense) sn=("${in[@]}"); si=("${ii[@]}") ;;
+	esac
+}
+
+print(){
+	case_state $1
 	printf '\e[4m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "expense:" "$((expense_total))" " $cur"
-	for i in ${!ei[@]};{ printf '\e[m%-12.12s\e[1m%12.9s\e[m%s\n' "${en[i]}" "$((${ei[i]}))" " $cur";}
+	for i in ${!si[@]};{ printf '\e[m%-12.12s\e[1m%12.9s\e[m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur";}
 }
 
 print_income(){
@@ -40,8 +48,8 @@ print_income(){
 }
 
 print_all(){
-	echo; print_income; echo; print_expense
-		printf '\n\e[1m%s\n' "remaining: $((income_total-expense_total)) $cur"
+	echo; print income; echo; print expense
+		printf '\n\e[1m%s\n' "remaining: $((it-et)) $cur"
 }
 
 print(){
