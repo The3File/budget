@@ -1,62 +1,48 @@
 #!/usr/bin/env bash
+reset(){ printf '\e[u\e[?25l\e[J'; }
 
 fz(){ fzf --ansi --reverse --height=40% -0 -1 -q "$1"; }
 
 income(){
 	cmd=$1; shift
-	eval $(printf '%s\n' "print" "add" "delete" | fz $cmd)_income "$@"
+	eval $(printf '%s\n' "print" "add" "delete" | fz $cmd) "income" "$@"
 }
 
 expense(){
 	cmd=$1; shift
-	eval $(printf '%s\n' "print" "add" "delete" | fz $cmd)_expense "$@"
+	eval $(printf '%s\n' "print" "add" "delete" | fz $cmd) "expense" "$@"
 }
 
-add_income(){
-	in+=("$1"); ii+=("$2"); ((it+=$2))
+print_all(){
+	for i in income expense; do print "$i"; done
+	printf '\n\e[1m%s\n' "remaining: $((it-et)) $cur"
 }
 
-add_expense(){
-	en+=("$1"); ei+=("$2"); ((et+=$2))
+print(){
+	[[ $1 ]] || { print_all; return; }
+	case $1 in
+		income) sn=(${in[@]}); si=(${ii[@]}); st=$it ;;
+		expense) sn=(${en[@]}); si=(${ei[@]}); st=$et ;;
+	esac
+	printf '\e[4m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "$1:" "$((st))" " $cur"
+	for ((i=0;i<${#si[@]};i++)){
+		printf '\e[m%-12.12s\e[1m%12.9s\e[m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur"
+	}
+}
+
+add(){
+	case $REPLY in
+		income) in+=("$2"); ii+=("$3"); ((it+=$3)) ;;
+		expense) en+=("$2"); ei+=("$3"); ((et+=$3)) ;;
+	esac
 }
 
 delete(){
 	for i in "${!sn}";{
 		[[ "${sn[i]}" =~ $1 ]] || continue
-		read -rp $''"delete ${sn[i]}"
-		[[ "$REPLY" =~ y|Y ]] || continue
-		unset !sn[i] !si[i]
+		read -rp $''"delete ${sn[i]}"; [[ "$REPLY" =~ y|Y ]] || continue
+		case $1 in income) unset in[i] ii[i] ;; expense) unset en[i] ei[i] ;; esac
 	}
-	print_income
-}
-
-case_state(){
-	case $1 in
-		income) sn=("${in[@]}"); si=("${ii[@]}") ;;
-		expense) sn=("${in[@]}"); si=("${ii[@]}") ;;
-	esac
-}
-
-print(){
-	case_state $1
-	printf '\e[4m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "expense:" "$((et))" " $cur"
-	for i in ${!si[@]};{ printf '\e[m%-12.12s\e[1m%12.9s\e[m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur";}
-}
-
-print_income(){
-	printf '\e[4m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "income:" "$((it))" " $cur"
-	for i in ${!in[@]};{
-		printf '\e[m%-12.12s\e[1m%12.9s\e[m%s\n' "${in[i]}" "$((${ii[i]}))" " $cur"
-	}
-}
-
-print_all(){
-	echo; print income; echo; print expense
-	printf '\n\e[1m%s\n' "remaining: $((it-et)) $cur"
-}
-
-print(){
-	print_all
 }
 
 read_file(){
@@ -64,23 +50,50 @@ read_file(){
 		[[ ! -z "$line" ]] && set $line || continue
 		[[ $2 =~ [0-9] ]] || { state=$1; continue; }
 		case $state in
-			income*) add_income "$1" "$2" ;;
-			expense*) add_expense "$1" "$2" ;;
+			"income"*) in+=("$1"); ii+=("$2"); ((it+=$2)) ;;
+			"expense"*) en+=("$1"); ei+=("$2"); ((et+=$2)) ;;
 		esac
 	done  < "$budget"
 }
 
+write_file(){
+	for i in ${!in[@]}; do
+		printf '%s\n' "income:" "${in[@]} ${ii[@]}"
+	done
+}
+
 print_opts(){ printf '%s\n' "print" "income" "expense"; }
 
+printl(){
+	printf '\e[1m%s \e[0;36m%s\e[m\n' "BUDGET 0.0.1" "[j/k to move]"
+	for i in ${!o[@]}; do
+		case $i in
+			$p) printf '\e[1;36m> %s\e[m\n' "${o[p]}" ;;
+			*) printf '\e[2m\e[2C%s\e[m\n' "${o[i]}"
+		esac
+	done
+	print_all
+}
+
+case_key(){
+	case $1 in
+		k) ((p=p>0?p-1:0)) ;;
+		j) ((p=p<${#o[@]}-1?p+1:2)) ;;
+		''|l) eval ${o[p]} ;;
+		$'\x1b'|q) exit 0 ;;
+	esac
+}
+
 main(){
-	cur="kr"
 	budget="$HOME/Dokumenter/budget.tab"
 	[[ -f $budget ]] || budget="example.bgt"
+	p=0; o=("print" "add" "delete")
+	printf '\e[s'
 	read_file
-	cmd=$1; shift
-	eval $(print_opts | fz "$cmd") "$@"
+	for((;;)){ st="0";reset; printl; read -rsn1 key; case_key "$key"; }
 }
 
 
+trap "printf '\e[u\e[m\e[J\e[?25h'" EXIT
 cur="kr"
 main "$@"
