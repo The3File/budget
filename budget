@@ -30,7 +30,6 @@ delete(){
 	print_income
 }
 
-<<<<<<< HEAD
 case_state(){
 	case $1 in
 		income) sn=("${in[@]}"); si=("${ii[@]}") ;;
