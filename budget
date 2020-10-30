@@ -15,8 +15,18 @@ expense(){
 add_income(){
 	in+=("$1"); ii+=("$2"); ((income_total+=$2))
 }
+
 add_expense(){
 	en+=("$1"); ei+=("$2"); ((expense_total+=$2))
+}
+
+delete_income(){
+	for i in "${!in}";{
+		[[ "${in[i]}" =~ $1 ]] || continue
+		read -rp $''"delete ${in[i]}"
+		[[ "$REPLY" =~ y|Y ]] || continue
+		unset in[i] ii[i]
+	}
 }
 
 print_expense(){
@@ -56,7 +66,6 @@ main(){
 	read_file
 	cmd=$1; shift
 	eval $(print_opts | fz "$cmd") "$@"
-	print_all
 }
 
 
