@@ -39,7 +39,7 @@ case_state(){
 
 print(){
 	case_state $1
-	printf '\e[4m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "expense:" "$((expense_total))" " $cur"
+	printf '\e[4m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "expense:" "$((et))" " $cur"
 	for i in ${!si[@]};{ printf '\e[m%-12.12s\e[1m%12.9s\e[m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur";}
 }
 
