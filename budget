@@ -3,16 +3,6 @@ reset(){ printf '\e[u\e[?25l\e[J'; }
 
 fz(){ fzf --ansi --reverse --height=40% -0 -1 -q "$1"; }
 
-income(){
-	cmd=$1; shift
-	eval $(printf '%s\n' "print" "add" "delete" | fz $cmd) "income" "$@"
-}
-
-expense(){
-	cmd=$1; shift
-	eval $(printf '%s\n' "print" "add" "delete" | fz $cmd) "expense" "$@"
-}
-
 print_all(){
 	for i in income expense; do echo; print "$i"; done
 	printf '\n\e[1m%s\n' "remaining: $((it-et)) $cur"
@@ -24,13 +14,15 @@ print(){
 		income) sn=(${in[@]}); si=(${ii[@]}); st=$it ;;
 		expense) sn=(${en[@]}); si=(${ei[@]}); st=$et ;;
 	esac
-	printf '\e[4;34m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "$1:" "$((st))" " $cur"
+	printf '\e[2C\e[4;34m\e[1m%-12.12s%12.12s\e[m\e[4m%s\n' "$1:" "$((st))" " $cur"
 	for ((i=0;i<${#si[@]};i++)){
-		printf '\e[0;34m%-12.12s\e[1;35m%12.9s\e[0m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur"
+		printf '\e[2C\e[0;34m%-12.12s\e[1;35m%12.9s\e[0m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur"
 	}
 }
 
 add(){
+	#p=0
+	menu=("income" "expense")
 	case $REPLY in
 		income) in+=("$2"); ii+=("$3"); ((it+=$3)) ;;
 		expense) en+=("$2"); ei+=("$3"); ((et+=$3)) ;;
@@ -38,9 +30,10 @@ add(){
 }
 
 delete(){
+	#p=0
+	menu=("income" "expense")
 	for i in "${!sn}";{
 		[[ "${sn[i]}" =~ $1 ]] || continue
-		read -rp $''"delete ${sn[i]}"; [[ "$REPLY" =~ y|Y ]] || continue
 		case $1 in income) unset in[i] ii[i] ;; expense) unset en[i] ei[i] ;; esac
 	}
 }
@@ -64,15 +57,24 @@ write_file(){
 
 print_opts(){ printf '%s\n' "print" "income" "expense"; }
 
-printl(){
+print_menu(){
 	printf '\e[1m%12.12s \e[0;36m%15.13s\e[m\n' "BUDGET 0.0.1" "[j/k to move]"
-	for i in ${!o[@]}; do
+	for i in ${!menu[@]}; do
 		case $i in
-			$p) printf '\e[1;36m> %s\e[m\n' "${o[p]}" ;;
-			*) printf '\e[2m\e[2C%s\e[m\n' "${o[i]}"
+			$p) printf '\e[1;36m> %s\e[m\n' "${menu[p]}" ;;
+			*) printf '\e[2m\e[2C%s\e[m\n' "${menu[i]}"
 		esac
 	done
 	print_all
+}
+
+case_selection(){
+	case $1 in
+		add) add ;;
+		delete) delete ;;
+		income) ;;
+		expense) ;;
+	esac
 }
 
 case_key(){
@@ -83,8 +85,9 @@ case_key(){
     }
 	case ${e:-$1} in
 		k|$'\e[A') ((p=p>0?p-1:0)) ;;
-		j|$'\e[B') ((p=p<${#o[@]}-1?p+1:${#o[@]}-1)) ;;
-		l|'') eval ${o[p]} ;;
+		j|$'\e[B') ((p=p<${#o[@]}-1?p+1:${#menu[@]}-1)) ;;
+		l|'') oo=("${menu[@]}"); case_selection "${menu[p]}" ;;
+		h|$'\177') o=("${oo[@]}") ;;
 		$'\x1b'|q) exit 0 ;;
 	esac
 }
@@ -92,10 +95,10 @@ case_key(){
 main(){
 	budget="$HOME/Dokumenter/budget.tab"
 	[[ -f $budget ]] || budget="example.bgt"
-	p=0; o=("add" "delete" "write")
+	p=0; menu=("add" "delete")
 	printf '\e[s'
 	read_file
-	for((;;)){ st="0";reset; printl; read -rsn1 key; case_key "$key"; }
+	for((;;)){ st="0";reset; print_menu; read -rsn1 key; case_key "$key"; }
 }
 
 
