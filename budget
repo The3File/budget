@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+reset(){ printf '\e[u\e[?25l\e[J'; }
+
+print_all(){
+	for i in income expense; do
+		print_budget "$i"
+	done
+
+	printf '\n\e[1m%s\n' "remaining: $((it-et)) $cur"
+}
+
+print_budget(){
+	get_sn $1
+
+	printf '\e[4;34m\e[1m%-16.16s%16.16s\e[m\e[4m%s\n'\
+		"$1:" "$((st))" " $cur"
+
+	for i in ${!si[@]}; do
+		printf '\e[0;34m%-16.16s\e[1;35m%16.11s\e[0m%s\n'\
+			"${sn[i]}" "$((${si[i]}))" " $cur"
+	done
+}
+
+print_menu(){
+	printf '\e[1m%12.16s \e[0;36m%22.15s\e[m\n'\
+		"BUDGET 0.0.1" "[beta]"
+
+	for i in ${!menu[@]}; do
+		case $i in
+			$sel) printf '\e[1;36m> %s\e[m\n' "${menu[sel]}" ;;
+			*) printf '\e[2m\e[2C%s\e[m\n' "${menu[i]}"
+		esac
+	done
+
+	print_all
+}
+
+add(){
+	read -rp "new $1: " entry
+	read -rp "value $1: " value
+	add_to "$1"
+}
+
+delete(){
+	read -rp "delete $1: " entry
+
+	get_sn "$1"
+
+	for i in "${!sn}";{
+		[[ "${sn[i]}" =~ $entry ]] || continue
+		case $1 in
+			income) unset in[i] ii[i] ;;
+			expense) unset en[i] ei[i] ;;
+		esac
+	}
+}
+
+get_sn(){
+	case $1 in
+		income) sn=(${in[@]}); si=(${ii[@]}); st=$it ;;
+		expense) sn=(${en[@]}); si=(${ei[@]}); st=$et ;;
+	esac
+}
+
+add_to(){
+	case $1 in
+		"income"*) in+=("$entry"); ii+=("$value") ;;
+		"expense"*) en+=("$entry"); ei+=("$value") ;;
+	esac
+}
+
+menu_forward(){
+	menu_old=("${menu[@]}")
+	menu=("income" "expense")
+	((old_sel=sel,sel=0))
+}
+
+menu_back(){
+	sel=$old_sel
+	menu=("${menu_old[@]}")
+}
+
+case_addel(){
+	case ${menu_old[old_sel]} in
+		add) add $1 ;;
+		delete) delete $1
+	esac
+}
+
+case_sel(){
+	case $1 in
+		add) menu_forward ;;
+		delete) menu_forward ;;
+		income) case_addel income ;;
+		expense) case_addel expense ;;
+	esac
+}
+
+case_key(){
+	special_key $1
+	case ${spec_key:-$1} in
+		k|$'\e[A')
+			((sel=sel>0?sel-1:0))
+			;;
+		j|$'\e[B')
+			((sel=sel<${#menu[@]}-1?sel+1:${#menu[@]}-1))
+			;;
+		l|$'\e[C'|'')
+			case_sel "${menu[sel]}"
+			;;
+		h|$'\e[D'|$'\177')
+			menu_back
+			;;
+		$'\x1b'|q) exit 0 ;;
+	esac
+	calc_total
+}
+
+calc_total(){
+	it=""; et=""
+	for i in ${!ii[@]};{ ((it+=${ii[i]})); }
+	for i in ${!ei[@]};{ ((et+=${ei[i]})); }
+}
+
+special_key(){
+    [[ $1 == $'\e' ]] && {
+        read -rsn 2
+        [[ ${1}${REPLY} == $'\e\e['* ]] && read -rsn 1 _
+        spec_key=${1}${REPLY}
+    }
+}
+
+read_file(){
+	while read -r line; do ((i++))
+		[[ ! -z "$line" ]] && set $line || continue
+		[[ $2 =~ [0-9] ]] || { state=$1; continue; }
+		entry="$1"; value="$2"
+		add_to "$state"
+	done  < "$budget"
+}
+
+write_file(){
+	for i in ${!in[@]}; do
+		printf '%s\n' "${in[i]} ${ii[i]}"
+	done
+}
+
+main(){
+	budget="${1:-example.bgt}"
+	budget="$HOME/Dokumenter/budget.tab"
+	sel=0; menu=("add" "delete" "modify")
+	printf '\e[s'
+	read_file
+	for((;;)){ st="0";reset; print_menu; read -rsn1 key; case_key "$key"; }
+}
+
+
+trap "printf '\e[u\e[m\e[J\e[?25h'" EXIT
+trap 'exit' SIGINT
+cur="dkk"
+main "$@"
