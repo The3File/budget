@@ -1,0 +1,41 @@
+# vim: ft=bash
+# vim: ft=sh
+PREFIX="${PREFIX:-/usr/local}"
+bin_dir="${PREFIX}"
+man_dir="${PREFIX}/share"
+
+fail(){ [[ $1 ]] && printf '%s\n' "failed to $1"; exit 1;}
+success(){ printf '%s\n' "successfully $1";}
+
+install(){
+	for bin in ${bins[@]};{ copy "$bin";}
+	for man in ${mans[@]};{ copy "$man";}
+	success "installed"
+}
+
+uninstall(){
+	for file in ${bins[@]} ${mans[@]}; do
+		remove "$file"
+	done
+	success "uninstalled"
+}
+
+copy(){
+	dest="${PREFIX}/$1"
+	[[ "$dest" -ot "$1" || ! -a $dest ]] || fail "not newer"
+	cp -rf $1 "${dest//man\//share\/man/}" || fail $_
+}
+
+remove(){
+	dest="${PREFIX}/$1"
+	[[ "$dest" ]] || return 1
+	rm "${dest//man\//share\/man/}" || fail $_
+}
+
+for bin in bin/*;{ bins+=($bin);}
+for man in man/*/*.[0-9];{ mans+=($man);}
+
+case $1 in
+	u*) uninstall ;;
+	'') install ;;
+esac
