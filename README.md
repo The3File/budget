@@ -2,11 +2,9 @@
 `minimalist` budget tui
 
 ## advantages
-no dependencies other than `bash`, so you can keep track of your personal budget on your opscure \*nix server
+no dependencies other than `bash`, so you can keep track of your personal budget on your obscure \*nix server
 
 ## usage
-find documentation in the `man` page
-
 ``` bash
 # just run
 budget
@@ -18,7 +16,7 @@ budget
 
 ``` bash
 git clone https://github.com/The3File/budget.git
-cd timer
+cd budget
 sudo bash -e install
 ```
 > supply `u` to uninstall
