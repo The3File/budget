@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-reset(){ printf '\e[u\e[?25l\e[J'; }
+reset(){ printf '\e[u\e[?25l\e[J\e[s'; }
 
 print_all(){
 	for i in income expense; do
@@ -34,8 +34,8 @@ print_menu(){
 }
 
 add(){
-	read -rp "new $1: " entry
-	read -rp "value $1: " value
+	read -rp "name of $1: " entry
+	read -rp "value of $entry: " value
 	add_to "$1"
 }
 
@@ -144,8 +144,8 @@ write_file(){
 }
 
 main(){
-	budget="${1:-example.bgt}"
-	budget="$HOME/Dokumenter/budget.tab"
+	#budget="$HOME/Dokumenter/budget.tab"
+	budget="${1:-${PWD%/bin*}/example/example.bgt}"
 	sel=0; menu=("add" "delete" "modify")
 	printf '\e[s'
 	read_file
