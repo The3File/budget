@@ -26,6 +26,5 @@ sudo bash -e install
 ## dependencies
 
 * `bash 4+`
-* ~~`coreutils`~~
 
 ## notes
