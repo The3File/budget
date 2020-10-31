@@ -41,12 +41,6 @@ add(){
 	add_to "$1"
 }
 
-calc_total(){
-	it=""; et=""
-	for i in ${!ii[@]};{ ((it+=${ii[i]})); }
-	for i in ${!ei[@]};{ ((et+=${ei[i]})); }
-}
-
 delete(){
 	read -rp "delete $1: " entry
 
@@ -86,22 +80,19 @@ menu_back(){
 	menu=("${menu_old[@]}")
 }
 
+case_addel(){
+	case ${menu_old[old_sel]} in
+		add) add $1 ;;
+		delete) delete $1
+	esac
+}
+
 case_sel(){
 	case $1 in
 		add) menu_forward ;;
 		delete) menu_forward ;;
-		income)
-			case ${menu[sel]} in
-				add) add income ;;
-				delete) delete income
-			esac
-			;;
-		expense)
-			case ${menu[sel]} in
-				add) add expense ;;
-				delete) delete expense
-			esac
-			;;
+		income) case_addel income ;;
+		expense) case_addel expense ;;
 	esac
 }
 
@@ -123,6 +114,12 @@ case_key(){
 		$'\x1b'|q) exit 0 ;;
 	esac
 	calc_total
+}
+
+calc_total(){
+	it=""; et=""
+	for i in ${!ii[@]};{ ((it+=${ii[i]})); }
+	for i in ${!ei[@]};{ ((et+=${ei[i]})); }
 }
 
 special_key(){
@@ -149,9 +146,9 @@ write_file(){
 }
 
 main(){
-	# budget="$HOME/Dokumenter/budget.tab"
 	budget="${1:-example.bgt}"
-	sel=0; menu=("add" "delete")
+	budget="$HOME/Dokumenter/budget.tab"
+	sel=0; menu=("add" "delete" "modify")
 	printf '\e[s'
 	read_file
 	for((;;)){ st="0";reset; print_menu; read -rsn1 key; case_key "$key"; }
@@ -160,5 +157,5 @@ main(){
 
 trap "printf '\e[u\e[m\e[J\e[?25h'" EXIT
 trap 'exit' SIGINT
-cur="kr"
+cur="dkk"
 main "$@"
