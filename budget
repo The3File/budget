@@ -2,7 +2,10 @@
 reset(){ printf '\e[u\e[?25l\e[J'; }
 
 print_all(){
-	for i in income expense; do echo; print_budget "$i"; done
+	for i in income expense; do
+		print_budget "$i"
+	done
+
 	printf '\n\e[1m%s\n' "remaining: $((it-et)) $cur"
 }
 
@@ -35,7 +38,7 @@ print_menu(){
 add(){
 	read -rp "new $1: " entry
 	read -rp "value $1: " value
-	read_state "$entry" "$value"
+	add_to "$1"
 }
 
 calc_total(){
@@ -65,25 +68,11 @@ get_sn(){
 	esac
 }
 
-read_state(){
+add_to(){
 	case $1 in
-		"income"*) in+=("$1"); ii+=("$2") ;;
-		"expense"*) en+=("$1"); ei+=("$2") ;;
+		"income"*) in+=("$entry"); ii+=("$value") ;;
+		"expense"*) en+=("$entry"); ei+=("$value") ;;
 	esac
-}
-
-read_file(){
-	while read -r line; do ((i++))
-		[[ ! -z "$line" ]] && set $line || continue
-		[[ $2 =~ [0-9] ]] || { state=$1; continue; }
-		read_state $state
-	done  < "$budget"
-}
-
-write_file(){
-	for i in ${!in[@]}; do
-		printf '%s\n' "${in[i]} ${ii[i]}"
-	done
 }
 
 menu_forward(){
@@ -114,7 +103,6 @@ case_sel(){
 			esac
 			;;
 	esac
-	calc_total
 }
 
 case_key(){
@@ -134,6 +122,7 @@ case_key(){
 			;;
 		$'\x1b'|q) exit 0 ;;
 	esac
+	calc_total
 }
 
 special_key(){
@@ -144,9 +133,24 @@ special_key(){
     }
 }
 
+read_file(){
+	while read -r line; do ((i++))
+		[[ ! -z "$line" ]] && set $line || continue
+		[[ $2 =~ [0-9] ]] || { state=$1; continue; }
+		entry="$1"; value="$2"
+		add_to "$state"
+	done  < "$budget"
+}
+
+write_file(){
+	for i in ${!in[@]}; do
+		printf '%s\n' "${in[i]} ${ii[i]}"
+	done
+}
+
 main(){
 	# budget="$HOME/Dokumenter/budget.tab"
-	[[ -f $budget ]] || budget="example.bgt"
+	budget="${1:-example.bgt}"
 	sel=0; menu=("add" "delete")
 	printf '\e[s'
 	read_file
