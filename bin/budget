@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 budget="${1:-${PWD%/bin*}/example/example.bgt}"
+[[ -a $budget ]] || { printf '%s\n' "no file '$budget'"; exit; }
 sel=0
 cur="dkk"
 menu=("add" "delete" "modify")
@@ -15,17 +16,14 @@ print_all(){
 
 print_budget(){
 	state "$1" get
-	printf '\n\e[4;34m\e[1m%-16.16s%16.16s\e[m\e[4m%s\n'\
-		"$1:" "$((st))" " $cur"
+	printf '\n\e[4;34m\e[1m%-16.16s%16.16s\e[m\e[4m%s\n' "$1:" "$((st))" " $cur"
 	for i in ${!si[@]}; do
-		printf '\e[0;34m%-16.16s\e[1;35m%16.11s\e[0m%s\n'\
-			"${sn[i]}" "$((${si[i]}))" " $cur"
+		printf '\e[0;34m%-16.16s\e[1;35m%16.11s\e[0m%s\n' "${sn[i]}" "$((${si[i]}))" " $cur"
 	done
 }
 
 print_menu(){
-	printf '\e[1m%12.16s \e[0;36m%24.15s\e[m\n'\
-		"BUDGET 0.0.1" "[beta]"
+	printf '\e[1m%12.16s \e[0;36m%24.15s\e[m\n' "BUDGET 0.0.1" "[beta]"
 	print_all
 	for i in ${!menu[@]}; do
 		case $i in
@@ -56,11 +54,13 @@ state(){
 			add) in+=("$entry"); ii+=("$value") ;;
 			del) unset in[i] ii[i] ;;
 			get) sn=(${in[@]}); si=(${ii[@]}); st=$it ;;
+			*) printf '%s\n' "failed to $2"; exit
 		esac ;;
 		expense) case $2 in
 			add) en+=("$entry"); ei+=("$value") ;;
 			del) unset en[i] ei[i] ;;
 			get) sn=(${en[@]}); si=(${ei[@]}); st=$et ;;
+			*) printf '%s\n' "failed to $2"; exit
 		esac ;;
 	esac
 }
@@ -107,7 +107,7 @@ case_key(){
 }
 
 calc_total(){
-	it=""; et=""
+	it=""; et=""; st=""
 	for i in ${!ii[@]};{ ((it+=${ii[i]})); }
 	for i in ${!ei[@]};{ ((et+=${ei[i]})); }
 }
@@ -115,23 +115,23 @@ calc_total(){
 read_file(){
 	while read -r line; do ((i++))
 		[[ ! -z "$line" ]] && set $line || continue
-		[[ $2 =~ [0-9] ]] || { state=$1; continue; }
+		[[ $2 =~ [0-9] ]] || { state=${1%:}; continue; }
 		entry="$1"; value="$2"
-		add_to "$state"
+		state "$state" add
 	done  < "$budget"
 }
 
 write_file(){
-	printf '%s\n' "income"
+	printf '%s\n' "income:"
 	for i in ${!in[@]};{ printf '%s\n' "${in[i]} ${ii[i]}";}
-	printf '%s\n' "expense"
+	printf '\n%s\n' "expense:"
 	for i in ${!en[@]};{ printf '%s\n' "${en[i]} ${ei[i]}";}
 	read
 }
 
 main(){
 	read_file
-	for((;;)){ st="0";reset; print_menu; read -rsn1 key; case_key "$key"; }
+	for((;;)){ reset; print_menu; read -rsn1 key; case_key "$key"; }
 }
 
 
