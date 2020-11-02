@@ -22,18 +22,18 @@ uninstall(){
 
 copy(){
 	local dest="${PREFIX}/$1"
-	[[ "$dest" -ot "$1" || ! -a $dest ]] || fail
+	[[ "$dest" -ot "$1" || ! -a $dest ]] || fail "nothing to do"
 	cp -rf $1 "${dest//man\//share\/man/}" || fail $_
 }
 
 remove(){
 	local dest="${PREFIX}/$1"
 	[[ "$dest" ]] || return 1
-	rm "${dest//man\//share\/man/}" || fail $_
+	rm "${dest//man\//share\/man/}" || fail "remove"
 }
 
-for bin in bin/*;{ bins+=($bin);}
-for man in man/*/*.[0-9];{ mans+=($man);}
+for bin in bin/*;{ [[ -a $bin ]] && bins+=($bin);}
+for man in man/*/*.[0-9];{ [[ -a $man ]] && mans+=($man);}
 
 case $1 in
 	u*) uninstall ;;
