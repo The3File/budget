@@ -121,12 +121,17 @@ read_file(){
 	done  < "$budget"
 }
 
-write_file(){
+print_to_file(){
 	printf '%s\n' "income:"
 	for i in ${!in[@]};{ printf '%s\n' "${in[i]} ${ii[i]}";}
 	printf '\n%s\n' "expense:"
 	for i in ${!en[@]};{ printf '%s\n' "${en[i]} ${ei[i]}";}
-	read
+}
+
+write_file(){
+	print_to_file
+	read -rsn1 -p "write to file? "
+	[[ $REPLY =~ y|Y ]] && print_to_file > $budget
 }
 
 main(){
