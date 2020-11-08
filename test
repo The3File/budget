@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+main(){
+	# Bind 'ctrl+n' to cycle through the buffer list. As
+	# the prompt uses bash's builtin 'readline', we're
+	# able to do whatever we like with it. Neat huh?
+	bind -x '"\C-n":cmd "/next"' &>/dev/null
+	bind -x '"\C-p":cmd "/prev"' &>/dev/null
+	bind 'TAB:menu-complete' &>/dev/null
+	bind 'set match-hidden-files off' &>/dev/null
+	bind 'set horizontal-scroll-mode on' &>/dev/null
+
+	dir="${TMPDIR:=/tmp}/budget"
+	cd "$dir" || exit 1
+	for file in income expense; do
+		mkdir -p "${dir}/${file}"
+		for f in add delete modify;{ :> ${file}/${f}; }
+	done
+
+	 # Set readline's history file so that we can manage
+	 # its history ourselves.
+	 export HISTFILE=$PWD/hist
+	 export HISTCONTROL=ignoreboth:erasedups
+	 export INPUTRC=$BIRCH_INPUTRC
+ }
+
+tst(){
+	case $1 in
+		income/add)	echo "income add $(($2))" ;;
+		income/delete) echo "income del $(($2))" ;;
+		income/modify) echo "income mod $(($2))" ;;
+	esac
+	echo $(($1))
+	[[ "$1" -gt 0 ]] || return
+	history -s "$1"
+}
+
+main "$@"
+
+while read -e; do set $REPLY; tst "$1" "$(($3))"; done
