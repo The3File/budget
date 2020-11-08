@@ -1,7 +1,9 @@
 income:
-sales				2000
-subscriptions	4800
+sales 2000
+subscriptions 4800
+test 2000
+
 expense:
-marketing		200
-toll				350
-taxes				2330
+marketing 200
+toll 350
+taxes 2330
