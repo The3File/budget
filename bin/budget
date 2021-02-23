@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-budget="${BUDGET_FILE:$1}"
+budget="${1:-BUDGET_FILE}"
 [[ -a $budget ]] || { printf '%s\n' "no file '$budget'"; exit; }
 sel=0
 cur="dkk"
