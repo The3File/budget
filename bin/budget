@@ -23,7 +23,7 @@ print_budget(){
 }
 
 print_menu(){
-	printf '\e[1m%12.16s \e[0;36m%24.15s\e[m\n' "BUDGET 0.0.1" "[beta]"
+	printf '\e[1m%12.16s \e[0;36m%24.15s\e[m\n' "BUDGET 0.0.1" "[pre-alpha]"
 	print_all
 	for i in ${!menu[@]}; do
 		case $i in
