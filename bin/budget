@@ -102,7 +102,7 @@ case_key(){
 		l|$'\e[C'|'') case_sel "${menu[sel]}" ;;
 		h|$'\e[D'|$'\177') menu_back ;;
 		w) printf '\e[2J\e[H'; write_file ;;
-		$'\x1b'|q) exit 0 ;;
+		$'\x1b'|q) printf '\e[2J\e[H'; write_file; exit 0 ;;
 	esac
 }
 
